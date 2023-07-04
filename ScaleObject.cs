@@ -7,19 +7,18 @@ using System;
 
 public class ScaleObject : MonoBehaviour
 {
-    private XRGrabInteractable grabInteractable;
+    private CustomGrabInteractable grabInteractable;
     private Vector3 originalScale;
-    private XRBaseInteractor grabInteractor;
     private List<InputDevice> devices = new List<InputDevice>();
-    private bool scaleModeActive = false;
-    private const float ScaleSpeed = 0.1f; // Adjust this value to make the scaling faster or slower
-    private float cumulativeScale = 1f; // Added this new variable
+    private const float ScaleSpeed = 0.1f;
+    private float cumulativeScale = 1f;
 
     public float minScale;
     public float maxScale;
+
     void Awake()
     {
-        grabInteractable = GetComponent<XRGrabInteractable>();
+        grabInteractable = GetComponent<CustomGrabInteractable>();
         originalScale = transform.localScale;
     }
 
@@ -37,19 +36,18 @@ public class ScaleObject : MonoBehaviour
 
     void StartScaling(SelectEnterEventArgs args)
     {
-        grabInteractor = args.interactor;
-        cumulativeScale = 1f; // Reset cumulativeScale every time scaling starts
+        cumulativeScale = 1f;
     }
-
 
     void EndScaling(SelectExitEventArgs args)
     {
-        if (scaleModeActive)
+        if (grabInteractable.ScaleModeActive)
         {
-            originalScale = transform.localScale;
-            scaleModeActive = false;
+            originalScale = transform.localScale; // Save the new scale when ending the grab
+            grabInteractable.ScaleModeActive = false;
         }
     }
+
     void Update()
     {
         if (grabInteractable.isSelected)
@@ -60,25 +58,11 @@ public class ScaleObject : MonoBehaviour
             {
                 if (devices[i].TryGetFeatureValue(CommonUsages.primaryButton, out bool isPressed) && isPressed)
                 {
-                    scaleModeActive = true;
-                    grabInteractable.trackPosition = false; // stop tracking position
-                    grabInteractable.trackRotation = false; // stop tracking rotation
+                    grabInteractable.ScaleModeActive = true;
                 }
             }
 
-            // Disable scaling on secondary button press
-            InputDevices.GetDevicesWithCharacteristics(InputDeviceCharacteristics.Right, devices);
-            for (int i = 0; i < devices.Count; i++)
-            {
-                if (devices[i].TryGetFeatureValue(CommonUsages.secondaryButton, out bool isPressed) && isPressed)
-                {
-                    scaleModeActive = false;
-                    grabInteractable.trackPosition = true; // resume tracking position
-                    grabInteractable.trackRotation = true; // resume tracking rotation
-                }
-            }
-
-            if (scaleModeActive)
+            if (grabInteractable.ScaleModeActive)
             {
                 for (int i = 0; i < devices.Count; i++)
                 {
@@ -87,15 +71,20 @@ public class ScaleObject : MonoBehaviour
                         float scaleFactor = 1 + (primary2DAxis.y * ScaleSpeed);
                         scaleFactor = Mathf.Round(scaleFactor * 10f) / 10f; // Round to nearest tenth
 
-                        cumulativeScale *= scaleFactor; // Accumulate the scale factor
-                        cumulativeScale = Mathf.Clamp(cumulativeScale, minScale, maxScale); // Limit scale to range 0.1 to 1
+                        cumulativeScale *= scaleFactor;
+                        cumulativeScale = Mathf.Clamp(cumulativeScale, minScale, maxScale); // Limit scale to range minScale to maxScale
 
-                        transform.localScale = originalScale * cumulativeScale; // Use cumulativeScale instead of scaleFactor
+                        transform.localScale = originalScale * cumulativeScale;
                     }
                 }
             }
         }
+        else if (grabInteractable.ScaleModeActive)
+        {
+            // Handle the case where the object has been deselected but ScaleModeActive is still true
+            originalScale = transform.localScale; // Save the new scale when ending the grab
+            grabInteractable.ScaleModeActive = false;
+        }
     }
-
 
 }
