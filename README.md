@@ -4,3 +4,6 @@ This repository will help you efficiently scale your objects remotely using XR I
 Requirements:
 https://docs.unity3d.com/Packages/com.unity.xr.interaction.toolkit@2.3/manual/installation.html
 
+
+How to implement: ScaleObject.cs and CustomGrabInteractable.cs files should be included 3D gameObject asset
+![image](https://github.com/alileylekoglu/UnityDistantObjectScaleVR/assets/43744775/4a2f5808-b050-454c-ac89-bff53b544d43)
